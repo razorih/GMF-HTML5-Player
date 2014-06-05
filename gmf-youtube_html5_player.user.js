@@ -2,21 +2,11 @@
 // @name        GMF - Youtube HTML5 Player
 // @author      razorih
 // @namespace   gmf.fi
-// @description 
+// @description Converts legacy <object> youtube players to more modern <iframe> players on gmf.fi
 // @include     http://www.gmf.fi/forums/*
-// @version     1
+// @version     1.1
 // @grant       none
 // ==/UserScript==
-
-/**
- * Todo
- *
- * - Lazy loading       ==> Done
- * - Fix regex          ==> Done
- * - Investigate nulls  ==> Done
- * - Touch Events       ==> Done
- */
-
 
 /**
  * Configuration
@@ -137,7 +127,7 @@ function convertEmbedFrame(player) {
     var attr = ripAttributes(player);
 
     // Make sure that the player is actually a youtube embed
-    // If we return a null here, the main loop will skip the conversion
+    // If we return false here, the main loop will skip the conversion
     if(!attr["embed"]["src"])
         return false; 
 
@@ -182,7 +172,3 @@ for (var i = ply.length - 1; i >= 0; i--) {
     })(frame, ply[i]);
 
 };
-
-
-// Expose ripAttributes to the window for testing purposes
-// window.rip = ripAttributes;
