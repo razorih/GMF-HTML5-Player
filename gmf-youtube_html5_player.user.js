@@ -17,8 +17,18 @@
  * - Touch Events       ==> Done
  */
 
-var reg = /\/v\/(.+)$/i, // RegExp for matching embed URLs, captures "video_id" in "/v/video_id"
+
+/**
+ * Configuration
+ */
+var threshold = 1, // How many videos are allowed for automatic conversion, increasing this also increases the lag
+    usehttps  = true, // Change this to false if you experience problems with https 
     fallback = "https://www.youtube.com/embed/3WAOxKOmR90"; // If the extracting fails, this video will be displayed instead
+
+// End of configuration
+
+
+var reg = /\/v\/(.+)$/i; // RegExp for matching embed URLs, captures "video_id" in "/v/video_id"
 
 /**
  * Extracts properties from <object> elements
@@ -83,7 +93,7 @@ function convertEmbedURL(url) {
 
     // Now that we have your video id, let's build the new url
     // Note: if you run into problems with https, try changing "https" -> "http"
-    return "https://www.youtube.com/embed/" + id[1];
+    return ((usehttps) ? "https:" : "http:") + "//www.youtube.com/embed/" + id[1];
 }
 
 
@@ -97,12 +107,12 @@ function convertEmbedURL(url) {
 function buildiframe(settings) {
     var el = document.createElement("iframe");
         el.classList.add("youtube-player");
-        el.setAttribute("type", "text/html"); // Required
+        el.setAttribute("type", "text/html");
         el.setAttribute("allowfullscreen", "true");
-        el.setAttribute("frameborder", "0");  // Disables that annoying border thing
+        el.setAttribute("frameborder", "0"); // Disables that annoying border thing
 
-        el.setAttribute("width", settings["embed"]["width"]);   // These come from the settings
-        el.setAttribute("height", settings["embed"]["height"]); // ^^
+        el.setAttribute("width", settings["embed"]["width"]);
+        el.setAttribute("height", settings["embed"]["height"]);
 
         el.setAttribute("src", convertEmbedURL(settings["embed"]["src"]));
 
@@ -113,6 +123,7 @@ function buildiframe(settings) {
 /**
  * "Master" conversion function
  * This takes a <object> youtube player and returns an iframe version of it
+ * If <object> isn't a youtube player, this will return false
  * 
  * @param  {Element} player <object> youtube player
  * @return {Element}        iframe version of player
@@ -124,6 +135,11 @@ function convertEmbedFrame(player) {
 
     // Rip attributes from player
     var attr = ripAttributes(player);
+
+    // Make sure that the player is actually a youtube embed
+    // If we return a null here, the main loop will skip the conversion
+    if(!attr["embed"]["src"])
+        return false; 
 
     // Return the newly built iframe player
     return buildiframe(attr);
@@ -141,6 +157,12 @@ for (var i = ply.length - 1; i >= 0; i--) {
 
     if(!(!!frame))
         continue; // Conversion failed, skip this video
+
+    if(ply.length <= threshold) {
+        // Convert video straight away
+        ply[i].parentNode.replaceChild(frame, ply[i]);
+        continue;
+    }
 
     // "Lazy" loading, convert player when ply[i] is hovered
     // Doing this should prevent massive lag when there's many players on one page
